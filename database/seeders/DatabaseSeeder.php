@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         $this->call(EstadoCitaSeeder::class);
+        $this->call(CtlDiasSeeder::class);
+        $this->call(HorariosCitasSeeder::class);
+
 
         User::factory()->create([
             'name' => 'Test User',

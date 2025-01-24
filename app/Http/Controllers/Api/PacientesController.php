@@ -6,16 +6,43 @@ use App\Http\Controllers\Controller;
 use App\Models\MntPacientes;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PacientesController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pacientes = MntPacientes::paginate(1
-    );
+        // Crear la extensión unaccent si no existe
+        DB::statement("DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'unaccent') THEN
+        CREATE EXTENSION unaccent;
+    END IF;
+    END $$;");
+
+        $query = MntPacientes::query();
+
+        if ($request->has('search') && $request->search) {
+            // Divide el término de búsqueda en palabras individuales y aplica `unaccent`
+            $searchTerms = explode(' ', trim(mb_strtolower($request->search, 'UTF-8')));
+
+            $query->where(function ($query) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $query->orWhereRaw("unaccent(nombre) ILIKE unaccent(?)", ['%' . $term . '%'])
+                    ->orWhereRaw("unaccent(apellido) ILIKE unaccent(?)", ['%' . $term . '%'])
+                    ->orWhereRaw("unaccent(nombre || ' ' || apellido) ILIKE unaccent(?)", ['%' . $term . '%']);
+                }
+            });
+        }
+
+        // Ordena los resultados y realiza la paginación
+        $pacientes = $query->orderBy('id', 'asc')->paginate(10);
+
         return response()->json($pacientes);
     }
+
+
+
 
     public function store(Request $request)
     {
@@ -164,5 +191,12 @@ class PacientesController extends Controller
             ], 500);
         }
     }
+
+    public function detalle($id)
+    {
+        $detalle = MntPacientes::where('id', $id)->first();
+        return response()->json($detalle);
+    }
+
 
 }

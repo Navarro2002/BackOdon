@@ -15,21 +15,24 @@ class DoctoresController extends Controller
     {
         // Verificar si la extensión 'unaccent' existe
         DB::statement("DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'unaccent') THEN
-            CREATE EXTENSION unaccent;
-            END IF;
-        END $$;");
+    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'unaccent') THEN
+        CREATE EXTENSION unaccent;
+    END IF;
+    END $$;");
 
         $query = MntDoctores::query();
 
         // Filtro combinado por nombre o apellido insensible a mayúsculas, minúsculas y tildes
         if ($request->has('search') && $request->search) {
-            $search = $request->search;
+            $searchTerms = explode(' ', trim(mb_strtolower($request->search, 'UTF-8')));
 
             // Usamos unaccent() para quitar tildes y LOWER para hacer la búsqueda insensible a mayúsculas/minúsculas
-            $query->where(function ($query) use ($search) {
-                $query->whereRaw("LOWER(unaccent(nombre)) LIKE ?", ['%' . mb_strtolower($search) . '%'])
-                ->orWhereRaw("LOWER(unaccent(apellido)) LIKE ?", ['%' . mb_strtolower($search) . '%']);
+            $query->where(function ($query) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $query->orWhereRaw("unaccent(nombre) ILIKE unaccent(?)", ['%' . $term . '%'])
+                        ->orWhereRaw("unaccent(apellido) ILIKE unaccent(?)", ['%' . $term . '%'])
+                        ->orWhereRaw("unaccent(nombre || ' ' || apellido) ILIKE unaccent(?)", ['%' . $term . '%']);
+                }
             });
         }
 
@@ -38,10 +41,6 @@ class DoctoresController extends Controller
 
         return response()->json($doctores);
     }
-
-
-
-
 
     public function store(Request $request)
     {
