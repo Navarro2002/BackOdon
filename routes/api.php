@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CatalogosController;
 use App\Http\Controllers\Api\CitasController;
+use App\Http\Controllers\Api\DiasCitasController;
 use App\Http\Controllers\Api\DoctoresController;
 use App\Http\Controllers\Api\PacientesController;
 use App\Models\CtlEstadoCita;
@@ -17,6 +18,7 @@ Route::prefix('pacientes')->group(function () {
     Route::get('/', [PacientesController::class, 'index']);
     Route::post('crear', [PacientesController::class, 'store']);
     Route::put('editar/{id}', [PacientesController::class, 'update']);
+    Route::get('detalle/{id}', [PacientesController::class, 'detalle']);
     Route::put('cambio-estado/{id}', [PacientesController::class, 'cambiarEstado']);
 });
 
@@ -30,7 +32,7 @@ Route::prefix('doctores')->group(function () {
 
 Route::prefix('citas')->group(function () {
     Route::get('/', [CitasController::class, 'index']);
-    Route::post('crear', [CitasController::class, 'store']);
+    Route::post('crear', [DiasCitasController::class, 'crear']);
     Route::put('editar/{id}', [CitasController::class, 'update']);
     Route::put('cambio-estado/{id}', [CitasController::class, 'cambiarEstado']);
 });
